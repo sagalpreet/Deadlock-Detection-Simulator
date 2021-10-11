@@ -1,0 +1,1 @@
+void* detect_deadlock(void* arg);
