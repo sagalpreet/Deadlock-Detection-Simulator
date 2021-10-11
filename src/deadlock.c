@@ -114,7 +114,7 @@ void* detect_deadlock(void* arg)
         {
             if (done[i] == -1)
             {
-                pthread_kill(WORKERS[i], SIGKILL);
+                while(pthread_cancel(WORKERS[i]));
                 for (int r = 0; r < num_resources; r++)
                 {
                     resources[r].r_free += THREAD_RESOURCES_REQUESTED[i][r] - THREAD_RESOURCES_REQUIRED[i][r];

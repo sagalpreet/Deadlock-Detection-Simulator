@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "worker.h"
 #include "resource.h"
@@ -15,6 +16,23 @@ extern pthread_t *WORKERS;
 
 void* worker_routine(void * arg)
 {
+    // getting the thread id and mapping of this thread in workers thread pool
+    pthread_t tid = pthread_self();
+    int tmap = 0;
+    for (;tmap < MAX_THREADS; tmap++) if (WORKERS[tmap] == tid) break;
+
+    if (tmap == MAX_THREADS) printf("warning: unmapped thread found\n");
+
+    // opening log file
+    char location[100] = "../log/";
+    char str_tid[20];
+    itoa(tid, str_tid);
+    strcat(location, str_tid);
+
+    FILE* log = fopen(location, "w");
+    setbuf(log, NULL);
+    fprintf(log, "Thread Id: %lu\n\n", tid);
+    
     // typecasting to get reference to resources
     struct resource_pool *POOL = (struct resource_pool *) arg;
 
@@ -33,13 +51,6 @@ void* worker_routine(void * arg)
         printf("warning: worker thread trying to access the details of resources before all of them are set\n");
     }
 
-    // getting the thread id and mapping of this thread in workers thread pool
-    pthread_t tid = pthread_self();
-    int tmap = 0;
-    for (;tmap < MAX_THREADS; tmap++) if (WORKERS[tmap] == tid) break;
-
-    if (tmap == MAX_THREADS) printf("warning: unmapped thread found\n");
-
     // creating the request array
     int *request = THREAD_RESOURCES_REQUIRED[tmap];
     int *request_copy = THREAD_RESOURCES_REQUESTED[tmap];
@@ -48,6 +59,8 @@ void* worker_routine(void * arg)
     {
         // setting up request array
         for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = rand() % (resources[i].r_count);
+        fprintf(log, "Resource Requests made:\n");
+        for (int i = 0; i < num_resources; i++) fprintf(log, "Resource %d: %d\n", i, request[i]);
         
         // acquiring resources
         int acquired = 0;
@@ -60,18 +73,24 @@ void* worker_routine(void * arg)
             pthread_mutex_lock(&MUTEX);
             if (request[resource_id] > resources[resource_id].r_free)
             {
+                if (resources[resource_id].r_free > 0) fprintf(log, "%d units of Resource %d acquired\n", resources[resource_id].r_free, resource_id);
+                
                 request[resource_id] -= resources[resource_id].r_free;
                 resources[resource_id].r_free = 0;
+
                 pthread_mutex_unlock(&MUTEX);
                 continue;
             }
 
+            if (request[resource_id] > 0) fprintf(log, "%d units of Resource %d acquired\n", request[resource_id], resource_id);
             resources[resource_id].r_free -= request[resource_id];
             request[resource_id] = 0;
             pthread_mutex_unlock(&MUTEX);
 
             acquired++;
         }
+
+        fprintf(log, "All the requirements for the process fulfilled. Initiating Process (sleep time)\n");
 
         // randomly choosing sleep time
         float timer = DELAY * ((rand() % 9) + 7.0) / 10;
@@ -85,6 +104,34 @@ void* worker_routine(void * arg)
             pthread_mutex_unlock(&MUTEX);
         }
 
-        printf("Successfully completed the request and deallocated all the resources\n");
+        fprintf(log, "Successfully completed the request and deallocated all the resources\n\n");
     }
+    fclose(log);
+}
+
+char* itoa(unsigned long long num, char* str)
+{
+    // converts an integer into string and stores it in the second argument (char* pointer), also returns the same
+    int i = 0;
+    if (num == 0)
+    {
+        str[i++] = '0';
+        str[i] = '\0';
+        return str;
+    }
+    while (num != 0)
+    {
+        int rem = num % 10;
+        str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
+        num = num/10;
+    }
+    str[i] = '\0';
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++)
+    {
+        char temp = str[i];
+        str[i] = str[len-i-1];
+        str[len-i-1] = temp;
+    }
+    return str;
 }
