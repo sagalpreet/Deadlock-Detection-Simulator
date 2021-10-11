@@ -92,7 +92,6 @@ void* worker_routine(void * arg)
             pthread_mutex_unlock(&MUTEX);
 
             acquired++;
-            fprintf(log, "%d resources requirement fulfilled\n", acquired);
         }
 
         fprintf(log, "All the requirements for the process fulfilled. Initiating Process (sleep time)\n");
