@@ -37,7 +37,7 @@ void* detect_deadlock(void* arg)
 
     while (1)
     {
-        sleep(DELAY);
+        usleep(DELAY);
         
         fprintf(log, "Deadlock Checking Begins\n");
 

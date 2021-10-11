@@ -94,7 +94,7 @@ void* worker_routine(void * arg)
 
         // randomly choosing sleep time
         float timer = DELAY * ((rand() % 9) + 7.0) / 10;
-        sleep(timer);
+        usleep(timer);
 
         // deallocating resources used
         for (int i = 0; i < num_resources; i++)
