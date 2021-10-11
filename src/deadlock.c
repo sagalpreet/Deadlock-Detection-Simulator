@@ -17,6 +17,10 @@ extern pthread_t *WORKERS;
 
 void* detect_deadlock(void* arg)
 {
+    // opening log file
+    FILE* log = fopen("../log/deadlock_detection", "w");
+    setbuf(log, NULL);
+
     // typecasting to get reference to resources
     struct resource_pool *POOL = (struct resource_pool *) arg;
 
@@ -28,12 +32,14 @@ void* detect_deadlock(void* arg)
     int num_resources = POOL -> size_cur;
     if (num_resources != POOL -> size_max)
     {
-        printf("warning: worker thread trying to access the details of resources before all of them are set\n");
+        fprintf(log, "warning: worker thread trying to access the details of resources before all of them are set\n");
     }
 
     while (1)
     {
         sleep(DELAY);
+        
+        fprintf(log, "Deadlock Checking Begins\n");
 
         pthread_mutex_lock(&MUTEX);
 
@@ -48,6 +54,8 @@ void* detect_deadlock(void* arg)
 
         int available[num_resources];
         for (int i = 0; i < num_resources; i++) available[i] = resources[i].r_free;
+
+        char is_first_iteration = 1;
 
         while (1)
         {
@@ -76,14 +84,29 @@ void* detect_deadlock(void* arg)
                     }
                 }
 
-                if (has_converged == 0) break;
+                if (has_converged == 1) break;
             }
             
+            if (is_first_iteration == 1)
+            {
+                is_first_iteration = 0;
+                fprintf(log, "The processes involved in deadlock reside on the following threads:\n");
+                for (int i = 0; i < MAX_THREADS; i++)
+                {
+                    if (done[i] == 0)
+                    {
+                        fprintf(log, "%lu ", WORKERS[i]);
+                    }
+                }
+                fprintf(log, "\n");
+            }
+
             // heuristic function decides which process to kill -> returns -1 if already all processes are in either states: out of deadlock or killed
             int index = first_thread_heuristic(num_resources, done, available);
             if (index == -1) break;
 
             for (int i = 0; i < num_resources; i++) available[i] += THREAD_RESOURCES_REQUESTED[index][i] - THREAD_RESOURCES_REQUIRED[index][i];
+            fprintf(log, "Process on thread %lu killed\n", WORKERS[index]);
         }
 
         // kill (decided to be) killed threads
@@ -101,8 +124,12 @@ void* detect_deadlock(void* arg)
             }
         }
 
+        fprintf(log, "\n-----------Deadlock Checking Ends------------\n\n\n");
+
         pthread_mutex_unlock(&MUTEX);
     }
+
+    fclose(log);
 }
 
 int first_thread_heuristic(int num_resources, int* done, int* available)

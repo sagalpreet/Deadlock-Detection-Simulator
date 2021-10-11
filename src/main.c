@@ -69,5 +69,5 @@ int main(int argc, char const *argv[])
     pthread_create(&deadlock, NULL, &detect_deadlock, POOL);
 
     // not exiting the program until interrupted
-    pthread_join(deadlock, NULL);
+    while (1);
 }
