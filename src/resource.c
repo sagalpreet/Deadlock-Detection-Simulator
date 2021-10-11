@@ -22,7 +22,7 @@ struct resource_pool* resource_pool(int size_max)
     return p_pool;
 }
 
-void append(struct resource_pool* pool, int r_count, char* r_name)
+void append(struct resource_pool* pool, int r_count, const char* r_name)
 {
     if (pool -> size_cur == pool -> size_max)
     {
@@ -33,7 +33,7 @@ void append(struct resource_pool* pool, int r_count, char* r_name)
     (pool -> resources)[pool -> size_cur].r_count = r_count;
     (pool -> resources)[pool -> size_cur].r_free = r_count;
     
-    (pool -> resources)[pool -> size_cur].r_name = r_name;
+    (pool -> resources)[pool -> size_cur].r_name = (char *) r_name;
 
     (pool -> size_cur) += 1;
 }

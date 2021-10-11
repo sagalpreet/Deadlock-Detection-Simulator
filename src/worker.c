@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "worker.h"
 #include "resource.h"
 
 extern double DELAY;
+extern int MAX_THREADS;
 extern pthread_mutex_t MUTEX;
 extern int **THREAD_RESOURCES_REQUESTED;
 extern int **THREAD_RESOURCES_REQUIRED;
@@ -33,10 +35,10 @@ void* worker_routine(void * arg)
 
     // getting the thread id and mapping of this thread in workers thread pool
     pthread_t tid = pthread_self();
-    int tmap = -1;
-    for (;tmap < num_resources; tmap++) if (WORKERS[tmap] == tid) break;
+    int tmap = 0;
+    for (;tmap < MAX_THREADS; tmap++) if (WORKERS[tmap] == tid) break;
 
-    if (tmap == num_resources) printf("warning: unmapped thread found\n");
+    if (tmap == MAX_THREADS) printf("warning: unmapped thread found\n");
 
     // creating the request array
     int *request = THREAD_RESOURCES_REQUIRED[tmap];

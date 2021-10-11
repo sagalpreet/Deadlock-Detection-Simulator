@@ -11,8 +11,8 @@ struct resource_pool *POOL; // pool of resources
 int MAX_THREADS; // limit on the number of threads
 double DELAY; // delay
 pthread_t *WORKERS; // worker threads
-extern int **THREAD_RESOURCES_REQUESTED; // maintains track of resources requested up by each thread
-extern int **THREAD_RESOURCES_REQUIRED; // maintains track of more resources required by thread
+int **THREAD_RESOURCES_REQUESTED; // maintains track of resources requested up by each thread
+int **THREAD_RESOURCES_REQUIRED; // maintains track of more resources required by thread
 
 pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER; // mutex lock
 
@@ -42,19 +42,16 @@ int main(int argc, char const *argv[])
         append(POOL, r_count, argv[2*i+1]);
     }
 
-    MAX_THREADS = atoi(argv[argc-2]);
+    MAX_THREADS = atoi(argv[argc-1]);
     if (MAX_THREADS == 0)
     {
         printf("The Number of threads cannot be equal to 0\n");
         exit(1);
     }
 
-    DELAY = atof(argv[argc-1]);
-
-    // initialize worker threads
-    WORKERS = (pthread_t *) malloc (sizeof(pthread_t) * MAX_THREADS);
-    for (int i = 0; i < MAX_THREADS; i++) pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
+    DELAY = atof(argv[argc]);
     
+    // allocate memory for storing resource consumptioon information
     THREAD_RESOURCES_REQUESTED = (int **) malloc (sizeof(int *) * MAX_THREADS);
     THREAD_RESOURCES_REQUIRED = (int **) malloc (sizeof(int *) * MAX_THREADS);
     for (int i = 0; i < MAX_THREADS; i++)
@@ -63,6 +60,10 @@ int main(int argc, char const *argv[])
         THREAD_RESOURCES_REQUIRED[i] = (int *) malloc (sizeof (int) * num_resources);
         for (int j = 0; j < num_resources; j++) THREAD_RESOURCES_REQUESTED[i][j] = THREAD_RESOURCES_REQUIRED[i][j] = 0;
     }
+
+    // initialize worker threads
+    WORKERS = (pthread_t *) malloc (sizeof(pthread_t) * MAX_THREADS);
+    for (int i = 0; i < MAX_THREADS; i++) pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
 
     pthread_t deadlock;
     pthread_create(&deadlock, NULL, &detect_deadlock, POOL);
