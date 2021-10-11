@@ -62,9 +62,13 @@ void* worker_routine(void * arg)
         fprintf(log, "Resource Requests made:\n");
         for (int i = 0; i < num_resources; i++) fprintf(log, "Resource %d: %d\n", i, request[i]);
         
+        // zero requirement resource count
+        int z_count = 0;
+        for (int i = 0; i < num_resources; i++) if (request[i] == 0) z_count++;
+
         // acquiring resources
         int acquired = 0;
-        while (acquired < num_resources)
+        while (acquired + z_count < num_resources)
         {
             int resource_id = rand() % num_resources; // inherent random pauses between allocations
 
@@ -88,6 +92,7 @@ void* worker_routine(void * arg)
             pthread_mutex_unlock(&MUTEX);
 
             acquired++;
+            fprintf(log, "%d resources requirement fulfilled\n", acquired);
         }
 
         fprintf(log, "All the requirements for the process fulfilled. Initiating Process (sleep time)\n");
