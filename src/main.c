@@ -12,7 +12,7 @@ int MAX_THREADS; // limit on the number of threads
 double DELAY; // delay
 pthread_t *WORKERS; // worker threads
 extern int **THREAD_RESOURCES_REQUESTED; // maintains track of resources requested up by each thread
-extern int **THREAD_RESOURCES_REQUIRED; // maintains track of resources used up by each thread
+extern int **THREAD_RESOURCES_REQUIRED; // maintains track of more resources required by thread
 
 pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER; // mutex lock
 
@@ -67,7 +67,6 @@ int main(int argc, char const *argv[])
     pthread_t deadlock;
     pthread_create(&deadlock, NULL, &detect_deadlock, POOL);
 
-    // not exiting the program until threads are running
-    for (int i = 0; i < MAX_THREADS; i++) pthread_join(WORKERS[i], NULL);
+    // not exiting the program until interrupted
     pthread_join(deadlock, NULL);
 }

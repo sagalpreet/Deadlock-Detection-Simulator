@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "deadlock.h"
 #include "worker.h"
@@ -37,9 +38,85 @@ void* detect_deadlock(void* arg)
         pthread_mutex_lock(&MUTEX);
 
         // code for deadlock detection goes here
+        
+        int done[MAX_THREADS]; // indicate which threads are trapped in deadlock
+        for (int i = 0; i < MAX_THREADS; i++) done[i] = 0;
+
+        //  0 -> not processed yet
+        //  1 -> not to be killed
+        // -1 -> to be killed
+
+        int available[num_resources];
+        for (int i = 0; i < num_resources; i++) available[i] = resources[i].r_free;
+
+        while (1)
+        {
+            while (1)
+            {
+                char has_converged = 1; // boolean variable to indicate whether or not while loop should be broken
+                for (int t = 0; t < MAX_THREADS; t++)
+                {
+                    if (done[t] != 0) continue;
+
+                    char is_deadlocked = 0;
+                    for (int r = 0; r < num_resources; r++)
+                    {
+                        if (available[r] < THREAD_RESOURCES_REQUIRED[t][r])
+                        {
+                            is_deadlocked = 1;
+                            break;
+                        }
+                    }
+
+                    if (is_deadlocked == 0)
+                    {
+                        has_converged = 0;
+                        done[t] = 1;
+                        for (int r = 0; r < num_resources; r++) available[r] += THREAD_RESOURCES_REQUESTED[t][r] - THREAD_RESOURCES_REQUIRED[t][r];
+                    }
+                }
+
+                if (has_converged == 0) break;
+            }
+            
+            // heuristic function decides which process to kill -> returns -1 if already all processes are in either states: out of deadlock or killed
+            int index = first_thread_heuristic(num_resources, done, available);
+            if (index == -1) break;
+
+            for (int i = 0; i < num_resources; i++) available[i] += THREAD_RESOURCES_REQUESTED[index][i] - THREAD_RESOURCES_REQUIRED[index][i];
+        }
+
+        // kill (decided to be) killed threads
+        for (int i = 0; i < MAX_THREADS; i++)
+        {
+            if (done[i] == -1)
+            {
+                pthread_kill(WORKERS[i], SIGKILL);
+                for (int r = 0; r < num_resources; r++)
+                {
+                    resources[r].r_free += THREAD_RESOURCES_REQUESTED[i][r] - THREAD_RESOURCES_REQUIRED[i][r];
+                    THREAD_RESOURCES_REQUESTED[i][r] = THREAD_RESOURCES_REQUIRED[i][r] = 0;
+                }
+                pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
+            }
+        }
 
         pthread_mutex_unlock(&MUTEX);
     }
 }
 
+int first_thread_heuristic(int num_resources, int* done, int* available)
+{
+    int not_done = -1;
+    for (int t = 0; t < MAX_THREADS; t++)
+    {
+        if (done[t] == 0)
+        {
+            done[t] = -1;
+            not_done = t;
+            break;
+        }
+    }
 
+    return not_done;
+}

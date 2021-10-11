@@ -36,6 +36,8 @@ void* worker_routine(void * arg)
     int tmap = -1;
     for (;tmap < num_resources; tmap++) if (WORKERS[tmap] == tid) break;
 
+    if (tmap == num_resources) printf("warning: unmapped thread found\n");
+
     // creating the request array
     int *request = THREAD_RESOURCES_REQUIRED[tmap];
     int *request_copy = THREAD_RESOURCES_REQUESTED[tmap];
