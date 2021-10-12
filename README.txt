@@ -109,6 +109,8 @@ Command Line Arguments: Specify the list of avilable resources with their name a
 
 By default, a constant int FORCE_DEADLOCK is set to 1 in worker.c file in the src folder. You may change it to 0 if you don't want to force deadlocks and keep randomness in resource requests but then it might become difficult for you to track the deadlocks and no deadlocks may occur if number of threads are very less (like, say 2)
 
+The heuristic function can be changed in deadlock.c file by changing the function used in detect_deadlock function on line 107. By default, heaviest_thread_heuristic is being used.
+
 The execution results are stored as log files in log folder.
 log.txt contains time-stamped information about which thread requested which resource, which resource has been acquired in how much quantity by which thread etc.
 deadlock.txt contains time-stamped information about whether deadlock has occurred. If yes, which all threads are involved in it.
