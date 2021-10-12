@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "worker.h"
 #include "deadlock.h"
+#include "log.h"
 
 struct resource_pool *POOL; // pool of resources
 int MAX_THREADS; // limit on the number of threads
@@ -16,11 +17,20 @@ char *WORKER_STATUS; // shared memory for communication between worker threads a
 int **THREAD_RESOURCES_REQUESTED; // maintains track of resources requested up by each thread
 int **THREAD_RESOURCES_REQUIRED; // maintains track of more resources required by thread
 
-pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER; // mutex lock
+pthread_mutex_t MUTEX = PTHREAD_MUTEX_INITIALIZER; // mutex lock for making resources array thread-safe
+pthread_mutex_t MUTEX_LOG = PTHREAD_MUTEX_INITIALIZER; // mutex lock for making file logging thread-safe
+pthread_mutex_t MUTEX_BEAUTIFUL_LOG = PTHREAD_MUTEX_INITIALIZER; // mutex lock for making file logging of resource details continuous
 
 int main(int argc, char const *argv[])
 // format example: A 1 B 2 C 3 10 5 // make sure none of the instance count should be equal to 0
 {
+    FILE* fptr_clean_log = fopen("../log/log.txt", "w");
+    FILE* fptr_clean_deadlock = fopen("../log/deadlock.txt", "w");
+    fclose(fptr_clean_log);
+    fclose(fptr_clean_deadlock);
+
+    FILE* fptr = fopen("../log/main.txt", "w");
+    setbuf(fptr, NULL);
     argc--;
     if (argc % 2 || argc < 2)
     {
@@ -81,7 +91,7 @@ int main(int argc, char const *argv[])
         {
             if (WORKERS[i] == 0)
             {
-                printf("Thread %d is being restarted...\n", i);
+                log(fptr, "Thread %d is being restarted...\n", i);
                 WORKER_STATUS[i] = 1;
                 pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
             }
@@ -90,4 +100,6 @@ int main(int argc, char const *argv[])
 
     // not exiting the program until interrupted
    pthread_join(deadlock, NULL);
+
+   fclose(fptr);
 }

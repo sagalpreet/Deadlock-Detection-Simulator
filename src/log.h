@@ -1,0 +1,1 @@
+void log(FILE *f, char *format, ...);

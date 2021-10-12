@@ -1,0 +1,77 @@
+
+Wed Oct 13 01:23:14 2021 : Thread 0 (139878230718208): Resource Requests made:
+Wed Oct 13 01:23:14 2021 : Resource 0: 1
+Wed Oct 13 01:23:14 2021 : Resource 1: 2
+Wed Oct 13 01:23:14 2021 : Resource 2: 3
+
+
+Wed Oct 13 01:23:14 2021 : Thread 1 (139878222325504): Resource Requests made:
+Wed Oct 13 01:23:14 2021 : Resource 0: 1
+Wed Oct 13 01:23:14 2021 : Resource 1: 2
+Wed Oct 13 01:23:14 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:16 2021 : Thread 0 (139878230718208): 2 units of Resource 1 acquired
+Wed Oct 13 01:23:18 2021 : Thread 0 (139878230718208): 1 units of Resource 0 acquired
+Wed Oct 13 01:23:20 2021 : Thread 1 (139878222325504): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:22 2021 : Thread 0 (139878230718208): killed and all the resources acquired by it released
+Wed Oct 13 01:23:22 2021 : Thread 1 (139878222325504): 2 units of Resource 1 acquired
+
+Wed Oct 13 01:23:22 2021 : Thread 0 (139878205429504): Resource Requests made:
+Wed Oct 13 01:23:22 2021 : Resource 0: 1
+Wed Oct 13 01:23:22 2021 : Resource 1: 2
+Wed Oct 13 01:23:22 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:24 2021 : Thread 1 (139878222325504): 1 units of Resource 0 acquired
+Wed Oct 13 01:23:24 2021 : Thread 1 (139878222325504): All the requirements for the process fulfilled. Initiating Process (sleep time)
+Wed Oct 13 01:23:25 2021 : Successfully completed the request and deallocated all the resources
+
+
+Wed Oct 13 01:23:25 2021 : Thread 1 (139878222325504): Resource Requests made:
+Wed Oct 13 01:23:25 2021 : Resource 0: 1
+Wed Oct 13 01:23:25 2021 : Resource 1: 2
+Wed Oct 13 01:23:25 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:26 2021 : Thread 0 (139878205429504): 1 units of Resource 0 acquired
+Wed Oct 13 01:23:27 2021 : Thread 1 (139878222325504): 2 units of Resource 1 acquired
+Wed Oct 13 01:23:28 2021 : Thread 0 (139878205429504): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:28 2021 : Thread 0 (139878205429504): killed and all the resources acquired by it released
+
+Wed Oct 13 01:23:28 2021 : Thread 0 (139878197036800): Resource Requests made:
+Wed Oct 13 01:23:28 2021 : Resource 0: 1
+Wed Oct 13 01:23:28 2021 : Resource 1: 2
+Wed Oct 13 01:23:28 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:29 2021 : Thread 1 (139878222325504): 1 units of Resource 0 acquired
+Wed Oct 13 01:23:32 2021 : Thread 0 (139878197036800): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:34 2021 : Thread 0 (139878197036800): killed and all the resources acquired by it released
+
+Wed Oct 13 01:23:34 2021 : Thread 0 (139878188644096): Resource Requests made:
+Wed Oct 13 01:23:34 2021 : Resource 0: 1
+Wed Oct 13 01:23:34 2021 : Resource 1: 2
+Wed Oct 13 01:23:34 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:35 2021 : Thread 1 (139878222325504): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:35 2021 : Thread 1 (139878222325504): All the requirements for the process fulfilled. Initiating Process (sleep time)
+Wed Oct 13 01:23:36 2021 : Successfully completed the request and deallocated all the resources
+
+
+Wed Oct 13 01:23:36 2021 : Thread 1 (139878222325504): Resource Requests made:
+Wed Oct 13 01:23:36 2021 : Resource 0: 1
+Wed Oct 13 01:23:36 2021 : Resource 1: 2
+Wed Oct 13 01:23:36 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:36 2021 : Thread 0 (139878188644096): 1 units of Resource 0 acquired
+Wed Oct 13 01:23:38 2021 : Thread 0 (139878188644096): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:40 2021 : Thread 0 (139878188644096): 2 units of Resource 1 acquired
+Wed Oct 13 01:23:40 2021 : Thread 0 (139878188644096): All the requirements for the process fulfilled. Initiating Process (sleep time)
+Wed Oct 13 01:23:41 2021 : Successfully completed the request and deallocated all the resources
+
+
+Wed Oct 13 01:23:41 2021 : Thread 0 (139878188644096): Resource Requests made:
+Wed Oct 13 01:23:41 2021 : Resource 0: 1
+Wed Oct 13 01:23:41 2021 : Resource 1: 2
+Wed Oct 13 01:23:41 2021 : Resource 2: 3
+
+Wed Oct 13 01:23:42 2021 : Thread 1 (139878222325504): 2 units of Resource 1 acquired
+Wed Oct 13 01:23:44 2021 : Thread 1 (139878222325504): 3 units of Resource 2 acquired
+Wed Oct 13 01:23:49 2021 : Thread 0 (139878188644096): 1 units of Resource 0 acquired

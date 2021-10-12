@@ -6,6 +6,9 @@
 
 #include "worker.h"
 #include "resource.h"
+#include "log.h"
+
+const int FORCE_DEADLOCK = 1;
 
 extern double DELAY;
 extern int MAX_THREADS;
@@ -14,6 +17,7 @@ extern int **THREAD_RESOURCES_REQUESTED;
 extern int **THREAD_RESOURCES_REQUIRED;
 extern pthread_t *WORKERS;
 extern char *WORKER_STATUS;
+extern pthread_mutex_t MUTEX_BEAUTIFUL_LOG;
 
 void* worker_routine(void * arg)
 {
@@ -25,14 +29,8 @@ void* worker_routine(void * arg)
     if (tmap == MAX_THREADS) printf("warning: unmapped thread found\n");
 
     // opening log file
-    char location[100] = "../log/";
-    char str_tid[20];
-    itoa(tid, str_tid);
-    strcat(location, str_tid);
-
-    FILE* log = fopen(location, "w");
-    setbuf(log, NULL);
-    fprintf(log, "Thread Id: %lu\n\n", tid);
+    FILE* fptr = fopen("../log/log.txt", "a");
+    setbuf(fptr, NULL);
     
     // typecasting to get reference to resources
     struct resource_pool *POOL = (struct resource_pool *) arg;
@@ -59,9 +57,21 @@ void* worker_routine(void * arg)
     while (1)
     {
         // setting up request array
-        for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = rand() % (resources[i].r_count + 1);
-        fprintf(log, "Resource Requests made:\n");
-        for (int i = 0; i < num_resources; i++) fprintf(log, "Resource %d: %d\n", i, request[i]);
+        if (FORCE_DEADLOCK)
+        {
+            for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = resources[i].r_count;
+        }
+        else
+        {
+            for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = rand() % (resources[i].r_count + 1);
+        }
+
+        pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+        fprintf(fptr, "\n");
+        log(fptr, "Thread %d (%lu): Resource Requests made:\n", tmap, tid);
+        for (int i = 0; i < num_resources; i++) log(fptr, "Resource %d: %d\n", i, request[i]);
+        fprintf(fptr, "\n");
+        pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
         
         // zero requirement resource count
         int z_count = 0;
@@ -73,7 +83,9 @@ void* worker_routine(void * arg)
         {
             if (WORKER_STATUS[tmap] == 0)
             {
-                printf("Thread %d: %lu killed\n", tmap, tid);
+                pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+                log(fptr, "Thread %d (%lu): killed and all the resources acquired by it released\n", tmap, tid);
+                pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
                 WORKERS[tmap] = 0;
                 for (int r = 0; r < num_resources; r++)
                 {
@@ -83,6 +95,8 @@ void* worker_routine(void * arg)
                 pthread_exit(NULL);
             }
 
+            if (FORCE_DEADLOCK) sleep(2); // debug statement to force deadlock
+
             int resource_id = rand() % num_resources; // inherent random pauses between allocations
 
             if (request[resource_id] == 0) continue;
@@ -90,7 +104,12 @@ void* worker_routine(void * arg)
             pthread_mutex_lock(&MUTEX);
             if (request[resource_id] > resources[resource_id].r_free)
             {
-                if (resources[resource_id].r_free > 0) fprintf(log, "%d units of Resource %d acquired\n", resources[resource_id].r_free, resource_id);
+                if (resources[resource_id].r_free > 0)
+                {
+                    pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+                    log(fptr, "Thread %d (%lu): %d units of Resource %d acquired\n", tmap, tid, resources[resource_id].r_free, resource_id);
+                    pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
+                }
                 
                 request[resource_id] -= resources[resource_id].r_free;
                 resources[resource_id].r_free = 0;
@@ -99,15 +118,22 @@ void* worker_routine(void * arg)
                 continue;
             }
 
-            if (request[resource_id] > 0) fprintf(log, "%d units of Resource %d acquired\n", request[resource_id], resource_id);
+            if (request[resource_id] > 0)
+            {
+                pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+                log(fptr, "Thread %d (%lu): %d units of Resource %d acquired\n", tmap, tid, request[resource_id], resource_id);
+                pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
+            }
             resources[resource_id].r_free -= request[resource_id];
             request[resource_id] = 0;
             pthread_mutex_unlock(&MUTEX);
 
             acquired++;
         }
-
-        fprintf(log, "All the requirements for the process fulfilled.\nInitiating Process (sleep time)\n");
+        
+        pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+        log(fptr, "Thread %d (%lu): All the requirements for the process fulfilled. Initiating Process (sleep time)\n", tmap, tid);
+        pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
 
         // randomly choosing sleep time
         float timer = DELAY * ((rand() % 9) + 7.0) / 10;
@@ -121,34 +147,9 @@ void* worker_routine(void * arg)
             pthread_mutex_unlock(&MUTEX);
         }
 
-        fprintf(log, "Successfully completed the request and deallocated all the resources\n\n");
+        pthread_mutex_lock(&MUTEX_BEAUTIFUL_LOG);
+        log(fptr, "Successfully completed the request and deallocated all the resources\n\n");
+        pthread_mutex_unlock(&MUTEX_BEAUTIFUL_LOG);
     }
-    fclose(log);
-}
-
-char* itoa(unsigned long long num, char* str)
-{
-    // converts an integer into string and stores it in the second argument (char* pointer), also returns the same
-    int i = 0;
-    if (num == 0)
-    {
-        str[i++] = '0';
-        str[i] = '\0';
-        return str;
-    }
-    while (num != 0)
-    {
-        int rem = num % 10;
-        str[i++] = (rem > 9)? (rem-10) + 'a' : rem + '0';
-        num = num/10;
-    }
-    str[i] = '\0';
-    int len = strlen(str);
-    for (int i = 0; i < len / 2; i++)
-    {
-        char temp = str[i];
-        str[i] = str[len-i-1];
-        str[len-i-1] = temp;
-    }
-    return str;
+    fclose(fptr);
 }

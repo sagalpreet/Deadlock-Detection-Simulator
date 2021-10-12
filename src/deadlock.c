@@ -7,6 +7,7 @@
 #include "deadlock.h"
 #include "worker.h"
 #include "resource.h"
+#include "log.h"
 
 extern int MAX_THREADS;
 extern double DELAY;
@@ -19,8 +20,8 @@ extern char *WORKER_STATUS;
 void* detect_deadlock(void* arg)
 {
     // opening log file
-    FILE* log = fopen("../log/deadlock_detection", "w");
-    setbuf(log, NULL);
+    FILE* fptr = fopen("../log/deadlock.txt", "a");
+    setbuf(fptr, NULL);
 
     // typecasting to get reference to resources
     struct resource_pool *POOL = (struct resource_pool *) arg;
@@ -33,14 +34,14 @@ void* detect_deadlock(void* arg)
     int num_resources = POOL -> size_cur;
     if (num_resources != POOL -> size_max)
     {
-        fprintf(log, "warning: worker thread trying to access the details of resources before all of them are set\n");
+        log(fptr, "warning: worker thread trying to access the details of resources before all of them are set\n");
     }
 
     while (1)
     {
         usleep(DELAY);
         
-        fprintf(log, "Deadlock Checking Begins\n");
+        log(fptr, "Deadlock Checking Begins\n");
 
         pthread_mutex_lock(&MUTEX);
 
@@ -91,15 +92,15 @@ void* detect_deadlock(void* arg)
             if (is_first_iteration == 1)
             {
                 is_first_iteration = 0;
-                fprintf(log, "The processes involved in deadlock reside on the following threads:\n");
+                log(fptr, "The processes involved in deadlock reside on the following threads:\n");
                 for (int i = 0; i < MAX_THREADS; i++)
                 {
                     if (done[i] == 0)
                     {
-                        fprintf(log, "%lu ", WORKERS[i]);
+                        log(fptr, "%d (%lu)\n", i, WORKERS[i]);
                     }
                 }
-                fprintf(log, "\n");
+                log(fptr, "\n");
             }
 
             // heuristic function decides which process to kill -> returns -1 if already all processes are in either states: out of deadlock or killed
@@ -112,12 +113,12 @@ void* detect_deadlock(void* arg)
         // kill (decided to be) killed threads
         for (int i = 0; i < MAX_THREADS; i++) if (done[i] == -1) WORKER_STATUS[i] = 0;
 
-        fprintf(log, "\n-----------Deadlock Checking Ends------------\n\n\n");
+        log(fptr, "\n-----------Deadlock Checking Ends------------\n\n\n");
 
         pthread_mutex_unlock(&MUTEX);
     }
 
-    fclose(log);
+    fclose(fptr);
 }
 
 int first_thread_heuristic(int num_resources, int* done, int* available)
