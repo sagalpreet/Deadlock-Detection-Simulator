@@ -14,6 +14,7 @@ extern pthread_mutex_t MUTEX;
 extern int **THREAD_RESOURCES_REQUESTED;
 extern int **THREAD_RESOURCES_REQUIRED;
 extern pthread_t *WORKERS;
+extern char *WORKER_STATUS;
 
 void* detect_deadlock(void* arg)
 {
@@ -106,23 +107,10 @@ void* detect_deadlock(void* arg)
             if (index == -1) break;
 
             for (int i = 0; i < num_resources; i++) available[i] += THREAD_RESOURCES_REQUESTED[index][i] - THREAD_RESOURCES_REQUIRED[index][i];
-            fprintf(log, "Process on thread %lu killed\n", WORKERS[index]);
         }
 
         // kill (decided to be) killed threads
-        for (int i = 0; i < MAX_THREADS; i++)
-        {
-            if (done[i] == -1)
-            {
-                while(pthread_cancel(WORKERS[i]));
-                for (int r = 0; r < num_resources; r++)
-                {
-                    resources[r].r_free += THREAD_RESOURCES_REQUESTED[i][r] - THREAD_RESOURCES_REQUIRED[i][r];
-                    THREAD_RESOURCES_REQUESTED[i][r] = THREAD_RESOURCES_REQUIRED[i][r] = 0;
-                }
-                pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
-            }
-        }
+        for (int i = 0; i < MAX_THREADS; i++) if (done[i] == -1) WORKER_STATUS[i] = 0;
 
         fprintf(log, "\n-----------Deadlock Checking Ends------------\n\n\n");
 

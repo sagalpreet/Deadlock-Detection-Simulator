@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "main.h"
 #include "resource.h"
@@ -11,6 +12,7 @@ struct resource_pool *POOL; // pool of resources
 int MAX_THREADS; // limit on the number of threads
 double DELAY; // delay
 pthread_t *WORKERS; // worker threads
+char *WORKER_STATUS; // shared memory for communication between worker threads and main function
 int **THREAD_RESOURCES_REQUESTED; // maintains track of resources requested up by each thread
 int **THREAD_RESOURCES_REQUIRED; // maintains track of more resources required by thread
 
@@ -63,11 +65,29 @@ int main(int argc, char const *argv[])
 
     // initialize worker threads
     WORKERS = (pthread_t *) malloc (sizeof(pthread_t) * MAX_THREADS);
-    for (int i = 0; i < MAX_THREADS; i++) pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
+    WORKER_STATUS = (char *) malloc (sizeof(char) * MAX_THREADS);
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        WORKER_STATUS[i] = 1;
+        pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
+    }
 
     pthread_t deadlock;
     pthread_create(&deadlock, NULL, &detect_deadlock, POOL);
 
+    while (1) // constantly check if a worker thread has been destroyed by deadlock thread
+    {
+        for (int i = 0; i < MAX_THREADS; i++)
+        {
+            if (WORKERS[i] == 0)
+            {
+                printf("Thread %d is being restarted...\n", i);
+                WORKER_STATUS[i] = 1;
+                pthread_create(&WORKERS[i], NULL, &worker_routine, POOL);
+            }
+        }
+    }
+
     // not exiting the program until interrupted
-    while (1);
+   pthread_join(deadlock, NULL);
 }

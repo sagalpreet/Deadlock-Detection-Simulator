@@ -13,6 +13,7 @@ extern pthread_mutex_t MUTEX;
 extern int **THREAD_RESOURCES_REQUESTED;
 extern int **THREAD_RESOURCES_REQUIRED;
 extern pthread_t *WORKERS;
+extern char *WORKER_STATUS;
 
 void* worker_routine(void * arg)
 {
@@ -58,7 +59,7 @@ void* worker_routine(void * arg)
     while (1)
     {
         // setting up request array
-        for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = rand() % (resources[i].r_count);
+        for (int i = 0; i < num_resources; i++) request[i] = request_copy[i] = rand() % (resources[i].r_count + 1);
         fprintf(log, "Resource Requests made:\n");
         for (int i = 0; i < num_resources; i++) fprintf(log, "Resource %d: %d\n", i, request[i]);
         
@@ -70,6 +71,18 @@ void* worker_routine(void * arg)
         int acquired = 0;
         while (acquired + z_count < num_resources)
         {
+            if (WORKER_STATUS[tmap] == 0)
+            {
+                printf("Thread %d: %lu killed\n", tmap, tid);
+                WORKERS[tmap] = 0;
+                for (int r = 0; r < num_resources; r++)
+                {
+                    resources[r].r_free += THREAD_RESOURCES_REQUESTED[tmap][r] - THREAD_RESOURCES_REQUIRED[tmap][r];
+                    THREAD_RESOURCES_REQUESTED[tmap][r] = THREAD_RESOURCES_REQUIRED[tmap][r] = 0;
+                }
+                pthread_exit(NULL);
+            }
+
             int resource_id = rand() % num_resources; // inherent random pauses between allocations
 
             if (request[resource_id] == 0) continue;
@@ -94,7 +107,7 @@ void* worker_routine(void * arg)
             acquired++;
         }
 
-        fprintf(log, "All the requirements for the process fulfilled. Initiating Process (sleep time)\n");
+        fprintf(log, "All the requirements for the process fulfilled.\nInitiating Process (sleep time)\n");
 
         // randomly choosing sleep time
         float timer = DELAY * ((rand() % 9) + 7.0) / 10;
