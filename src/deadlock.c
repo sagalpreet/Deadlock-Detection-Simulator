@@ -104,7 +104,7 @@ void* detect_deadlock(void* arg)
             }
 
             // heuristic function decides which process to kill -> returns -1 if already all processes are in either states: out of deadlock or killed
-            int index = first_thread_heuristic(num_resources, done, available);
+            int index = heaviest_thread_heuristic(num_resources, done, available);
             if (index == -1) break;
 
             for (int i = 0; i < num_resources; i++) available[i] += THREAD_RESOURCES_REQUESTED[index][i] - THREAD_RESOURCES_REQUIRED[index][i];
@@ -133,6 +133,44 @@ int first_thread_heuristic(int num_resources, int* done, int* available)
             break;
         }
     }
+
+    return not_done;
+}
+
+int last_thread_heuristic(int num_resources, int* done, int* available)
+{
+    int not_done = -1;
+    for (int t = MAX_THREADS - 1; t > -1; t--)
+    {
+        if (done[t] == 0)
+        {
+            done[t] = -1;
+            not_done = t;
+            break;
+        }
+    }
+
+    return not_done;
+}
+
+int heaviest_thread_heuristic(int num_resources, int* done, int* available)
+{
+    int not_done = -1;
+    int max_weight = 0;
+
+    for (int t = MAX_THREADS - 1; t > -1; t--)
+    {
+        if (done[t] == 0)
+        {
+            int sm = 0;
+            for (int r = 0; r < num_resources; r++) sm += THREAD_RESOURCES_REQUESTED[t][r] - THREAD_RESOURCES_REQUIRED[t][r];
+            if (sm <= max_weight) continue;
+            not_done = t;
+            max_weight = sm;
+        }
+    }
+
+    if (not_done != -1) done[not_done] = -1;
 
     return not_done;
 }
